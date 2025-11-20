@@ -1,24 +1,16 @@
-// CarGrooveSequencer.pde
-// Convierte el dataset de carros en un secuenciador rítmico tipo groovebox
-// - Lanes por marca
-// - Loop temporal continuo (playhead)
-// - Golpes /hit vía OSC a Pure Data
-// - BPM variable, mute de marcas, animación de golpe
-
 import oscP5.*;
 import netP5.*;
 
 Table cars;
 int totalRows;
 
-// Datos precalculados por fila
-float[] timePos;      // posición en el loop [0,1)
-int[] brandIndex;     // 0..6 según la marca
-float[] priceNorm;    // 0..1
-float[] engineNorm;   // 0..1
-float[] mileageNorm;  // 0..1
-float[] yearNorm;     // 0..1
-float[] hitGlow;      // nivel de glow cuando el golpe suena
+float[] timePos;      
+int[] brandIndex;     
+float[] priceNorm;    
+float[] engineNorm;   
+float[] mileageNorm;  
+float[] yearNorm;     
+float[] hitGlow;      
 
 float minPrice, maxPrice;
 float minEngine, maxEngine;
@@ -28,16 +20,15 @@ float minYear, maxYear;
 OscP5 osc;
 NetAddress pd;
 
-// Playhead del loop
-float playhead = 0.0;        // 0..1
+float playhead = 0.0;        
 float prevPlayhead = 0.0;
-float bpm = 110;             // tempo inicial
+float bpm = 110;             
 boolean playing = true;
 
 int lastMillis;
 
-// mute por marca
-boolean[] muteBrand = new boolean[7];  // Tesla, BMW, Audi, Ford, Honda, Mercedes, Toyota
+
+boolean[] muteBrand = new boolean[7];  
 
 void setup() {
   size(1200, 700);
@@ -52,7 +43,7 @@ void setup() {
     exit();
   }
 
-  // Ordenar por año para que el groove tenga una lógica temporal
+
   cars.sort("Year");
 
   totalRows   = cars.getRowCount();
@@ -68,8 +59,8 @@ void setup() {
   preprocessRows();
 
   // OSC
-  osc = new OscP5(this, 12000);             // puerto local
-  pd  = new NetAddress("127.0.0.1", 8000);  // Pure Data en esta máquina, puerto 8000
+  osc = new OscP5(this, 12000);             
+  pd  = new NetAddress("127.0.0.1", 8000);  
 
   lastMillis = millis();
 
@@ -84,25 +75,21 @@ void draw() {
   int marginLeft   = 80;
   int marginRight  = 60;
 
-  // Actualizar playhead según BPM
+ 
   updatePlayhead();
 
-  // Dibujar lanes (una por marca)
+
   drawBrandLanes(marginLeft, marginRight, marginTop, marginBottom);
 
-  // Dibujar todos los golpes
+  
   drawHits(marginLeft, marginRight, marginTop, marginBottom);
 
-  // Dibujar playhead
+
   drawPlayhead(marginLeft, marginRight, marginTop, marginBottom);
 
-  // HUD
   drawHUD();
 }
 
-// -----------------------------------------------------------
-// Cálculos iniciales
-// -----------------------------------------------------------
 void computeRanges() {
   minPrice   =  Float.MAX_VALUE;
   maxPrice   = -Float.MAX_VALUE;
@@ -130,7 +117,7 @@ void computeRanges() {
   }
 }
 
-// usamos norm1 porque norm() ya existe en Processing
+
 float norm1(float v, float vmin, float vmax) {
   if (vmax == vmin) return 0.0;
   return (v - vmin) / (vmax - vmin);
@@ -183,9 +170,7 @@ void preprocessRows() {
   }
 }
 
-// -----------------------------------------------------------
-// Update del playhead y disparo de golpes
-// -----------------------------------------------------------
+
 void updatePlayhead() {
   int now = millis();
   float dt = (now - lastMillis) / 1000.0; // segundos desde el frame anterior
@@ -199,20 +184,16 @@ void updatePlayhead() {
     playhead += loopsPerSec * dt;
   }
 
-  // wrap 0..1
   if (playhead >= 1.0) playhead -= 1.0;
   if (playhead < 0.0)  playhead += 1.0;
 
-  // Detectar golpes que han cruzado el playhead
   triggerHitsBetween(prevPlayhead, playhead);
 
-  // Decaimiento del glow
   for (int i = 0; i < totalRows; i++) {
     hitGlow[i] *= 0.90; // decay suave
   }
 }
 
-// evitamos nombres de parámetros "from" / "to"
 void triggerHitsBetween(float startPos, float endPos) {
   if (startPos <= endPos) {
     // caso normal: avance sin wrap
@@ -235,9 +216,6 @@ void triggerHitsBetween(float startPos, float endPos) {
   }
 }
 
-// -----------------------------------------------------------
-// Dibujo de lanes y golpes
-// -----------------------------------------------------------
 void drawBrandLanes(int marginLeft, int marginRight, int marginTop, int marginBottom) {
   stroke(0, 0, 50, 60);
   strokeWeight(1);
@@ -282,17 +260,15 @@ void drawHits(int marginLeft, int marginRight, int marginTop, int marginBottom) 
 
     float x = map(t, 0, 1, marginLeft, width - marginRight);
 
-    // pequeño jitter vertical según año para que no queden perfectamente en línea
     float jitter = map(yearNorm[i], 0, 1, -laneH * 0.2, laneH * 0.2);
     float y = laneCenterY + jitter;
 
-    // Color según año + motor
-    float hue = lerp(220, 20, yearNorm[i]);       // viejo → azul, nuevo → rojo
-    float sat = 40 + 60 * engineNorm[i];          // más motor → más saturación
-    float bri = 30 + 70 * (1.0 - mileageNorm[i]); // menos kilometraje → más brillante
+    float hue = lerp(220, 20, yearNorm[i]);       
+    float sat = 40 + 60 * engineNorm[i];          
+    float bri = 30 + 70 * (1.0 - mileageNorm[i]); 
 
-    float baseSize = 6 + 18 * priceNorm[i];       // precio → tamaño
-    float glow = hitGlow[i];                      // 0..1
+    float baseSize = 6 + 18 * priceNorm[i];       
+    float glow = hitGlow[i];                      
     float size = baseSize * (1.0 + 0.6 * glow);
 
     noStroke();
@@ -314,9 +290,6 @@ void drawPlayhead(int marginLeft, int marginRight, int marginTop, int marginBott
   line(x, marginTop, x, height - marginBottom);
 }
 
-// -----------------------------------------------------------
-// HUD
-// -----------------------------------------------------------
 void drawHUD() {
   fill(0, 0, 100);
   textAlign(LEFT, TOP);
@@ -328,9 +301,7 @@ void drawHUD() {
   text(s, 10, 10);
 }
 
-// -----------------------------------------------------------
-// OSC
-// -----------------------------------------------------------
+
 void sendHitToPD(int i) {
   OscMessage m = new OscMessage("/hit");
   m.add(brandIndex[i]);   // 0..6
@@ -348,9 +319,7 @@ void sendBpmToPD() {
   osc.send(m, pd);
 }
 
-// -----------------------------------------------------------
-// Interacción
-// -----------------------------------------------------------
+
 void keyPressed() {
   // Barra espaciadora: play / pause
   if (key == ' ') {
