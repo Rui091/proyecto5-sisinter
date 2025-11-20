@@ -1,7 +1,7 @@
 # Car Groove Sequencer – Audio-Visual Sonification of a Car Dataset
 # Autores: Rui Yu Lei Wu y Juan David Bernal
 
-*Video*: [https://www.youtube.com/watch?v=JUFd7heKBa4]
+*Video*: https://www.youtube.com/watch?v=JUFd7heKBa4
 
 
 This project connects **Processing** and **Pure Data** through **OSC** to transform a real car dataset into an **interactive audiovisual groove engine**.
@@ -230,5 +230,6 @@ You are now hearing the sonified car dataset.
 - Processing Visual + OSC Engine: CarGrooveSequencer.pde  
 - Pure Data Audio Engine: car_sonification.pd  
 - Dataset: car_price_prediction_.csv  
+
 
 
